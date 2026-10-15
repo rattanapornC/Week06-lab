@@ -13,6 +13,7 @@ import (
     "moviehub/handler"
     "moviehub/mw"
     "moviehub/store"
+    "strings"
 )
 
 func main() {
@@ -34,10 +35,12 @@ func main() {
 
     mux := http.NewServeMux()
     // mux.HandleFunc("POST /api/auth/register", h.Register)
-    mux.HandleFunc("POST /api/auth/login", h.Login)
+     mux.HandleFunc("POST /api/auth/login", h.Login)
     mux.HandleFunc("GET /api/movies", h.SearchMovies)
+    mux.HandleFunc("GET /api/movies/{id}", h.GetMovie)
     mux.HandleFunc("GET /api/movies/{id}/reviews", h.ListReviews)
 
-    log.Println("MovieHub API ฟังอยู่ที่ :8080")
-    log.Fatal(http.ListenAndServe(":8080", mw.Logging(mux)))
+    origins := strings.Split(os.Getenv("ALLOWED_ORIGINS"), ",")
+    log.Println("MovieHub API ฟังอยู่ที่ :8080 ต้อนรับ", origins)
+    log.Fatal(http.ListenAndServe(":8080", mw.Logging(mw.CORS(origins, mux))))
 }
