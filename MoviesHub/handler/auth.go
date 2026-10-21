@@ -49,3 +49,49 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
     }
     writeJSON(w, http.StatusOK, map[string]any{"token": token, "member": m})
 }
+
+func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
+    var req registerReq
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        writeError(w, http.StatusBadRequest, "BAD_JSON", "อ่านกล่อง JSON ไม่ออก")
+        return
+    }
+    email := strings.ToLower(strings.TrimSpace(req.Email))
+    name := strings.TrimSpace(req.DisplayName)
+
+    if !strings.Contains(email, "@") {
+        writeError(w, http.StatusBadRequest, "BAD_EMAIL", "อีเมลไม่ถูกต้อง")
+        return
+    }
+    if len(req.Password) < 4 {
+        writeError(w, http.StatusBadRequest, "BAD_PASSWORD", "รหัสผ่านสั้นเกินไป")
+        return
+    }
+    if name == "" {
+        writeError(w, http.StatusBadRequest, "BAD_NAME", "กรุณากรอกชื่อที่แสดง")
+        return
+    }
+
+    hash, err := auth.HashPassword(req.Password)
+    if err != nil {
+        internal(w, err)
+        return
+    }
+
+    m, err := h.Store.CreateMember(r.Context(), email, hash, name)
+    if errors.Is(err, store.ErrDuplicate) {
+        writeError(w, http.StatusConflict, "EMAIL_TAKEN", "อีเมลนี้ถูกใช้แล้ว")
+        return
+    }
+    if err != nil {
+        internal(w, err)
+        return
+    }
+
+    token, err := h.Tickets.Issue(m.ID, m.Role)
+    if err != nil {
+        internal(w, err)
+        return
+    }
+    writeJSON(w, http.StatusCreated, map[string]any{"token": token, "member": m})
+}

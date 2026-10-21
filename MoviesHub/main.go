@@ -34,7 +34,7 @@ func main() {
     h := &handler.Handler{Store: &store.Store{Pool: pool}, Tickets: tickets}
 
     mux := http.NewServeMux()
-    // mux.HandleFunc("POST /api/auth/register", h.Register)
+    mux.HandleFunc("POST /api/auth/register", h.Register)
      mux.HandleFunc("POST /api/auth/login", h.Login)
     mux.HandleFunc("GET /api/movies", h.SearchMovies)
     mux.HandleFunc("GET /api/movies/{id}", h.GetMovie)

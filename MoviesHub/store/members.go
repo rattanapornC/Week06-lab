@@ -4,7 +4,7 @@ import (
     "context"
     "errors"
 
-    // "github.com/jackc/pgx/v5/pgconn"
+    "github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -28,4 +28,24 @@ func (s *Store) MemberByEmail(ctx context.Context, email string) (Member, error)
         return Member{}, ErrNotFound
     }
     return m, err
+}
+
+var ErrDuplicate = errors.New("duplicate")
+
+func (s *Store) CreateMember(ctx context.Context, email, passwordHash, displayName string) (Member, error) {
+    var m Member
+    err := s.Pool.QueryRow(ctx, `
+        INSERT INTO members (email, password_hash, display_name)
+        VALUES ($1, $2, $3)
+        RETURNING id, email, password_hash, display_name, role`,
+        email, passwordHash, displayName,
+    ).Scan(&m.ID, &m.Email, &m.PasswordHash, &m.DisplayName, &m.Role)
+    if err != nil {
+        var pgErr *pgconn.PgError
+        if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+            return Member{}, ErrDuplicate
+        }
+        return Member{}, err
+    }
+    return m, nil
 }
