@@ -39,7 +39,7 @@ func (s *Store) SearchMovies(ctx context.Context, q string) ([]Movie, error) {
             OR m.title ILIKE '%' || $1 || '%'
             OR m.title_th ILIKE '%' || $1 || '%'
          ORDER BY m.vote_average DESC NULLS LAST, m.id
-         LIMIT 50`, q)
+         LIMIT 100`, q)
 	if err != nil {
 		return nil, err
 	}
