@@ -39,7 +39,7 @@ func (s *Store) SearchMovies(ctx context.Context, q string) ([]Movie, error) {
             OR m.title ILIKE '%' || $1 || '%'
             OR m.title_th ILIKE '%' || $1 || '%'
          ORDER BY m.vote_average DESC NULLS LAST, m.id
-         LIMIT 100`, q)
+         LIMIT 1000`, q)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +67,7 @@ func (s *Store) GetMovie(ctx context.Context, id int64) (MovieDetail, error) {
                 extract(year FROM m.release_date)::int,
                 round(m.vote_average, 1)::float8,
                 CASE WHEN m.poster_path LIKE 'http%' THEN m.poster_path
-                ELSE 'https://image.tmdb.org/t/p/w500' || m.poster_path END
+                ELSE 'https://image.tmdb.org/t/p/w500' || m.poster_path END,
                 coalesce(m.overview_th, m.overview)
          FROM movies m
          WHERE m.id = $1`, id).
